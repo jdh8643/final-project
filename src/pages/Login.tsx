@@ -10,7 +10,7 @@ const Login = () => {
 
   const handleLogin = (e: { preventDefault: () => void }) => {
     e.preventDefault()
-    // 임시로 이메일을 user 정보로 저장
+   
     setUser(email)
     navigate('/')
   }
