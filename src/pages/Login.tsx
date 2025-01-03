@@ -7,6 +7,7 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const navigate = useNavigate();
 
+
   const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
@@ -97,4 +98,7 @@ const Login = () => {
   );
 };
 
-export default Login;
+
+export default Login
+
+
