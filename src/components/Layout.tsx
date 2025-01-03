@@ -1,12 +1,14 @@
 import { Outlet, Link} from "react-router-dom";
 import { useContext } from "react";
 import { UserContext } from "../App";
+import supabase from "../utils/supabase";
 
 const Layout = () => {
   const { user, setUser } = useContext(UserContext);
 
 
-  const handleLogout = () => {
+  const handleLogout = async() => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
