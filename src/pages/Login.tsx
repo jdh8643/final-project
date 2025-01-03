@@ -1,72 +1,100 @@
-import { Link, useNavigate } from "react-router-dom"
-import { useState, useContext } from "react"
-import { UserContext } from "../App"
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import supabase from "../utils/supabase";
 
 const Login = () => {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const { setUser } = useContext(UserContext)
-  const navigate = useNavigate()
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const navigate = useNavigate();
 
-  const handleLogin = (e: { preventDefault: () => void }) => {
-    e.preventDefault()
-    setUser(email)
-    navigate('/')
-  }
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
+
+  const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  };
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      alert("이메일 형식이 올바르지 않습니다.");
+      return;
+    }
+
+    if (password.length < 6) {
+      alert("비밀번호는 6자 이상이어야 합니다.");
+      return;
+    }
+
+    // 1. supabase 로그인
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    console.log(data);
+    alert("로그인 완료");
+    navigate("/");
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="w-full max-w-md p-8 bg-white shadow-lg rounded-lg">
-        <h1 className="text-2xl font-bold mb-6 text-center">로그인</h1>
-        
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              이메일
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              비밀번호
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-          >
-            로그인
-          </button>
-        </form>
-
-        <div className="mt-4 text-center">
-          <p>
-            계정이 없으신가요?{" "}
-            <Link to="/signup" className="text-blue-500 hover:underline">
-              회원가입
-            </Link>
-          </p>
+    <div className="flex flex-col items-center justify-center h-screen">
+      <h1 className="text-2xl font-bold">회원가입</h1>
+      <form className="flex flex-col gap-4 w-80" onSubmit={onSubmit}>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="text-sm">
+            이메일
+          </label>
+          <input
+            className="border border-gray-300 rounded-md p-2"
+            id="email"
+            name="email"
+            type="email"
+            placeholder="이메일을 입력해주세요."
+            value={email}
+            onChange={onEmailChange}
+            required
+          />
         </div>
-      </div>
-    </div>
-  )
-}
 
-export default Login
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="text-sm">
+            비밀번호
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            className="border border-gray-300 rounded-md p-2"
+            placeholder="비밀번호를 입력해주세요."
+            value={password}
+            onChange={onPasswordChange}
+            required
+          />
+        </div>
+
+        <button
+          className="py-2 px-4 bg-blue-500 text-white rounded-md"
+          type="submit"
+        >
+          로그인하기
+        </button>
+        <Link
+          className="py-2 px-4 text-center text-blue-500 border border-blue-500 rounded-md"
+          to="/signup"
+        >
+          회원가입하러 가기
+        </Link>
+      </form>
+    </div>
+  );
+};
+
+export default Login;

@@ -1,70 +1,178 @@
-import { Link } from "react-router-dom"
-import { useState } from "react"
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import supabase from "../utils/supabase";
 
-const Signup = () => {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+export default function Signup() {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [nickname, setNickname] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
 
+  const onEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+  };
 
-  const handleSignup = (e: { preventDefault: () => void }) => {
-    e.preventDefault()
-    // 추후 Supabase 회원가입 구현
-  }
+  const onNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNickname(e.target.value);
+  };
+
+  const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+  };
+
+  const onPasswordConfirmChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPasswordConfirm(e.target.value);
+  };
+
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!nickname) {
+      alert("닉네임을 입력해주세요.");
+      return;
+    }
+
+    if (nickname.length <= 2) {
+      alert("닉네임은 3글자 이상이어야 합니다.");
+      return;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailRegex.test(email)) {
+      alert("이메일 형식이 올바르지 않습니다.");
+      return;
+    }
+
+    if (password.length < 6) {
+      alert("비밀번호는 6자 이상이어야 합니다.");
+      return;
+    }
+
+    if (password !== passwordConfirm) {
+      alert("비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    // 1. supabase 회원가입
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          nickname,
+        },
+      },
+    });
+
+    if (error) {
+      if (error.message === "User already registered") {
+        if (
+          window.confirm(
+            "이미 가입된 이메일입니다. 로그인 페이지로 이동하시겠습니까?"
+          )
+        ) {
+          navigate("/login");
+        }
+      } else {
+        alert(`회원가입에 실패했습니다. ${error.message}`);
+      }
+      return;
+    }
+
+    // 2. users 테이블에도 넣어준다
+    const { error: userError } = await supabase.from("users").insert({
+      id: data.user?.id,
+      email: email,
+      nickname: nickname,
+    });
+
+    if (userError) {
+      alert(`유저 생성에 실패했습니다. ${userError.message}`);
+      return;
+    }
+
+    alert("회원가입에 성공했습니다~!");
+    navigate("/");
+  };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-lg w-full max-w-md">
-        <h1 className="text-2xl font-bold mb-6 text-center">회원가입</h1>
-
-        <form onSubmit={handleSignup} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              이메일
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              비밀번호
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              required
-            />
-          </div>
-
-
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600"
-          >
-            가입하기
-          </button>
-        </form>
-
-        <div className="mt-4 text-center">
-          <p>
-            이미 계정이 있으신가요?{" "}
-            <Link to="/login" className="text-blue-500 hover:underline">
-              로그인
-            </Link>
-          </p>
+    <div className="flex flex-col items-center justify-center h-screen">
+      <h1 className="text-2xl font-bold">회원가입</h1>
+      <form className="flex flex-col gap-4 w-80" onSubmit={onSubmit}>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="email" className="text-sm">
+            이메일
+          </label>
+          <input
+            className="border border-gray-300 rounded-md p-2"
+            id="email"
+            name="email"
+            type="email"
+            placeholder="이메일을 입력해주세요."
+            value={email}
+            onChange={onEmailChange}
+            required
+          />
         </div>
-      </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="nickname" className="text-sm">
+            닉네임
+          </label>
+          <input
+            className="border border-gray-300 rounded-md p-2"
+            id="nickname"
+            name="nickname"
+            type="text"
+            placeholder="닉네임을 입력해주세요."
+            value={nickname}
+            onChange={onNicknameChange}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="password" className="text-sm">
+            비밀번호
+          </label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            className="border border-gray-300 rounded-md p-2"
+            placeholder="비밀번호를 입력해주세요."
+            value={password}
+            onChange={onPasswordChange}
+            required
+          />
+        </div>
+        <div className="flex flex-col gap-2">
+          <label htmlFor="passwordConfirm" className="text-sm">
+            비밀번호 확인
+          </label>
+          <input
+            id="passwordConfirm"
+            name="passwordConfirm"
+            type="password"
+            className="border border-gray-300 rounded-md p-2"
+            placeholder="비밀번호를 한 번 더 입력해주세요."
+            value={passwordConfirm}
+            onChange={onPasswordConfirmChange}
+            required
+          />
+        </div>
+        <button
+          className="py-2 px-4 bg-blue-500 text-white rounded-md"
+          type="submit"
+        >
+          회원가입
+        </button>
+        <Link
+          className="py-2 px-4 text-center text-blue-500 border border-blue-500 rounded-md"
+          to="/login"
+        >
+          로그인하러 가기
+        </Link>
+      </form>
     </div>
-  )
+  );
 }
-
-export default Signup
