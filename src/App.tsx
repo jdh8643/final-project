@@ -7,15 +7,11 @@ import Detail from "./pages/Detail";
 import UpdatePage from "./pages/UpdatePage";
 import CreatePage from "./pages/CreatePage";
 import Layout from "./components/Layout";
-import { useState, createContext } from "react";
-
-export const UserContext = createContext<any>(null);
+import { AuthProvider } from "./providers/AuthProvider";
 
 const Router = () => {
-  const [user, setUser] = useState(null);
-
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
@@ -29,7 +25,7 @@ const Router = () => {
           <Route path="/signup" element={<Signup />} />
         </Routes>
       </BrowserRouter>
-    </UserContext.Provider>
+    </AuthProvider>
   );
 };
 
