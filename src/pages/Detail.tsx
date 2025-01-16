@@ -1,64 +1,61 @@
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import Comment from "../components/Comment";
+import CommentForm from "../components/CommentForm";
+import { useQuery } from "@tanstack/react-query";
+import { getFeedById } from "../api/feedApi";
 import Feed from "../components/Feed";
 
 const Detail = () => {
+  const { id } = useParams();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["feeds", id],
+    queryFn: () => {
+      if (!id) {
+        throw new Error("id가 없습니다.");
+      }
+      return getFeedById(id);
+    },
+  });
+
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
+  if (!data) return <div>No data found</div>;
+
+  
+
   return (
     <>
-    <div className="max-w-screen-lg mx-auto  min-h-[calc(100vh-100px)] px-10 mb-10">
-      <div className="flex flex-col gap-6">
-        
-      <div className="flex flex-col gap-4">
-        <Link to="/" className="text-blue-500">
-          뒤로가기
-        </Link>
-        <Feed />
+      <div className="flex flex-col gap-8">
+        <div className="flex justify-between items-center">
+          <Link to="/" className="flex gap-2 text-sm">
+            <span className="text-blue-900 font-bold">{`<`}</span>
+            <span className="text-gray-600">뒤로가기</span>
+          </Link>
+          <div className="flex gap-2">
+            <Link
+              to="/update/1"
+              className="bg-yellow-500 text-white px-4 py-2 rounded-md "
+            >
+              수정
+            </Link>
+            <button className="bg-red-500 text-white px-4 py-2 rounded-md ">
+              삭제
+            </button>
+          </div>
+        </div>
+        <Feed feed={data} />
       </div>
 
       <div className="flex flex-col gap-8 bg-white p-6 rounded-lg">
-        <h3 className="text-blue-950 font-semibold">"4" "Comments"</h3>
-        <div className="flex gap-2.5">
-          <div className="flex flex-1 flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <div className="text-slate-900 font-bold text-sm">
-                aaa@aaa.com
-              </div>
-            </div>
-            <div className="text-gray-500">하하하</div>
-          </div>
-        </div>
-      </div>
-      <div className="flex flex-col gap-8 bg-white p-6 rounded-lg">
-        <h3 className="text-blue-950 font-semibold">"4" "Comments"</h3>
-        <div className="flex gap-2.5">
-          <div className="flex flex-1 flex-col gap-3">
-            <div className="flex flex-col gap-1">
-              <div className="text-slate-900 font-bold text-sm">
-                aaa@aaa.com
-              </div>
-            </div>
-            <div className="text-gray-500">하하하</div>
-          </div>
-        </div>
-
-        
+        <h3 className="text-blue-950 font-semibold">12 Comments</h3>
+        <Comment />
+        <Comment />
+        <Comment />
+        <Comment />
       </div>
 
-
-
-      <div className="mt-8">
-        <h3 className="text-lg font-bold mb-4">댓글 작성</h3>
-        <textarea
-          placeholder="댓글을 입력하세요"
-          className="w-full h-28 px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-1 focus:ring-gray-400"
-        ></textarea>
-        <div className="flex justify-end mt-3">
-          <button className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700">
-            작성
-          </button>
-        </div>
-      </div>
-      </div>
-      </div>
+      <CommentForm />
     </>
   );
 };
