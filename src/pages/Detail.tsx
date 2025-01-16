@@ -4,6 +4,8 @@ import CommentForm from "../components/CommentForm";
 import { useQuery } from "@tanstack/react-query";
 import { getFeedById } from "../api/feedApi";
 import Feed from "../components/Feed";
+import { getCommentsByFeedId } from "../api/commentApi";
+import { getUpvotesCount } from "../api/upvoteApi";
 
 const Detail = () => {
   const { id } = useParams();
@@ -11,18 +13,32 @@ const Detail = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["feeds", id],
     queryFn: () => {
-      if (!id) {
-        throw new Error("id가 없습니다.");
-      }
+      if (!id) throw new Error("id가 없습니다.");
       return getFeedById(id);
     },
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  const { data: comments, isLoading: isCommentsLoading } = useQuery({
+    queryKey: ["comments", id],
+    queryFn: () => {
+      if (!id) throw new Error("id가 없습니다.");
+      return getCommentsByFeedId(id);
+    },
+  });
+
+  const { data: upvotesCount, isLoading: isUpvotesLoading } = useQuery({
+    queryKey: ["upvotes", id],
+    queryFn: () => {
+      if (!id) throw new Error("id가 없습니다.");
+      return getUpvotesCount(id);
+    },
+  });
+
+  if (isLoading || isCommentsLoading) return <div>Loading...</div>;
   if (error) return <div>Error: {error.message}</div>;
   if (!data) return <div>No data found</div>;
 
-  
+  const commentsList = Array.isArray(comments) ? comments : [];
 
   return (
     <>
@@ -48,11 +64,17 @@ const Detail = () => {
       </div>
 
       <div className="flex flex-col gap-8 bg-white p-6 rounded-lg">
-        <h3 className="text-blue-950 font-semibold">12 Comments</h3>
-        <Comment />
-        <Comment />
-        <Comment />
-        <Comment />
+        <h3 className="text-blue-950 font-semibold">
+          {isCommentsLoading ? (
+            <div className="animate-pulse w-4 h-4 bg-slate-200 rounded-full"></div>
+          ) : (
+            commentsList.length
+          )}
+          Comments
+        </h3>
+        {commentsList.map((comment) => (
+          <Comment key={comment.id} comment={comment} />
+        ))}
       </div>
 
       <CommentForm />

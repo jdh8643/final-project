@@ -42,9 +42,12 @@ const {data:upvotesCount, isLoading:isUpvotesLoading} = useQuery({
         </div>
         <p className="text-gray-600 text-xs text-right">"작성일:" {new Date(feed.created_at).toLocaleDateString()}</p>
       </div>
-      <div className="flex items-center gap-1 p-3 text-gray-600">
+
+      <div className="flex items-center gap-1 p-3 ">
       <FaCommentDots className="text-gray-500 font-bold text-xl" />
-        <div className="font-bold">{isCommentsLoading ? '...' : commentsCount}</div>
+        <div className="text-blue-950 font-bold text-sm">
+          {isCommentsLoading ? <div className="animate-pulse w-4 h-4 bg-slate-200 rounded-full"></div> : commentsCount}
+          </div>
       </div>
     </Link>
   );
