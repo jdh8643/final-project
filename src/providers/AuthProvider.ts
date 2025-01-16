@@ -20,7 +20,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // 인증 상태 변경 감지
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((e, session) => {
+    } = supabase.auth.onAuthStateChange((_, session) => {
       if (session) {
         setUser({
           id: session.user.id,

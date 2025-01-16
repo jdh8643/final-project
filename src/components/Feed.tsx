@@ -26,7 +26,7 @@ const {data:upvotesCount, isLoading:isUpvotesLoading} = useQuery({
 
   return (
     <Link
-      to="/detail/1"
+      to={`/feeds/${feed.id}`}
       className="flex justify-between bg-white shadow-md p-6 rounded-lg"
     >
       <div>
