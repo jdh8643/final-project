@@ -12,12 +12,16 @@ export default function Login() {
 		setEmail(e.target.value)
 	}
 
+
 	const onPasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setPassword(e.target.value)
 	}
 
 	const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
+
+
+
 
 		// 유효성 검사
 		if (!email) {
