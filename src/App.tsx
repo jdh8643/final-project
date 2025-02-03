@@ -1,32 +1,32 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Signup from "./pages/Signup";
-import MyPage from "./pages/MyPage";
 import Detail from "./pages/Detail";
-import UpdatePage from "./pages/UpdatePage";
 import CreatePage from "./pages/CreatePage";
+import UpdatePage from "./pages/UpdatePage";
+import Signup from "./pages/Signup";
+import Login from "./pages/Login";
+import MyPage from "./pages/MyPage";
 import Layout from "./components/Layout";
-import { AuthProvider } from "./providers/AuthProvider";
+import { AuthProvider }  from "./providers/AuthProvider";
 
-const Router = () => {
+
+
+export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route element={<Layout />}>
             <Route path="/" element={<Home />} />
-            <Route path="/mypage" element={<MyPage />} />
             <Route path="/feeds/:id" element={<Detail />} />
-            <Route path="/update/:id" element={<UpdatePage />} />
-            <Route path="/create" element={<CreatePage />} />
+            <Route path="/feeds/create" element={<CreatePage />} />
+            <Route path="/feeds/update/:id" element={<UpdatePage />} />
+            <Route path="/mypage" element={<MyPage />} />
           </Route>
-          <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/login" element={<Login />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
-  );
-};
-
-export default Router;
+  )
+} 
