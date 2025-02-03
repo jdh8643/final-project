@@ -1,5 +1,8 @@
 import { IoPersonCircleOutline } from "react-icons/io5";
 import { useAuthStore } from "../stores/useAuthStore";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { deleteComment, editComment } from "../api/commentApi";
+import { useState } from "react";
 
 interface CommentProps {
 	id: string;
@@ -17,6 +20,55 @@ interface CommentProps {
 
 export default function Comment({ comment }: { comment: CommentProps }) {
 	const { user } = useAuthStore();
+	const [isEditing, setIsEditing] = useState(false);
+	const [editContent, setEditContent] = useState(comment.content);
+
+	// 수정 버튼 클릭 시 isEditing을 true로 변경하는 함수 
+	// -> 내용을 textarea로 바꿔주기
+	const handleEdit = () => {
+		setIsEditing(true);
+	}
+	const handleEditCancel = () => {
+		setIsEditing(false);
+		setEditContent(comment.content);
+	}
+
+	
+
+	const queryClient = useQueryClient();
+
+	const deleteMutation = useMutation({
+		mutationFn: () => deleteComment(comment.id),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['feeds', comment.feed_id] });
+		}
+	});
+
+	
+	const editMutation = useMutation({
+		mutationFn: async () => editComment({
+			commentId: comment.id,
+			content: editContent,
+		}),
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: ['feeds', comment.feed_id,"comments"] });
+			//textarea 를 닫기
+			setIsEditing(false);
+		},
+		onError: (error) => {
+			alert(`댓글 수정 실패: ${error.message}`);
+		}
+	});
+	
+	const handleDelete = () => {
+		if(confirm('정말로 삭제하시겠습니까?')) {
+			deleteMutation.mutate();
+		}
+	}
+
+	const handleEditSubmit = () => {
+		editMutation.mutate();
+	}
 
 	return (
 		<>
@@ -30,21 +82,31 @@ export default function Comment({ comment }: { comment: CommentProps }) {
 							{comment.user.nickname ? comment.user.nickname : comment.user.email}
 						</div>
 					</div>
-					<div className="text-gray-500">{comment.content}</div>
+					{isEditing? <textarea value={editContent} onChange={(e) => setEditContent(e.target.value)} 
+					className="text-gray-500 border border-gray-400 rounded-md p-2 resize-none text-sm" /> : 
+						<div className="text-gray-500">{comment.content}</div>}
+					
 				</div>
 				{/* 내가 로그인한 경우에만 보인다. */}
 				{user?.id === comment.user_id ?
 					(<div className="flex items-end gap-2">
-						<button
-							className="text-white bg-yellow-500 px-4 py-2 rounded-md"
-						>
-							수정
-						</button>
-						<button
-							className="text-white bg-red-500 px-4 py-2 rounded-md"
-						>
-							삭제
-						</button>
+						{isEditing? (<>
+						<button 
+						className="text-white bg-gray-500 px-4 py-2 rounded-md"
+							onClick={handleEditCancel}>취소</button>
+						<button 
+						className="text-white bg-yellow-500 px-4 py-2 rounded-md"
+						onClick={handleEditSubmit}>완료</button>
+						</>):(
+						<>
+						<button 
+						className="text-white bg-yellow-500 px-4 py-2 rounded-md"
+						onClick={handleEdit}>수정</button>
+						<button 
+						className="text-white bg-red-500 px-4 py-2 rounded-md"
+						onClick={handleDelete}>삭제</button>
+						</>
+						)}
 					</div>
 					) : null}
 			</div>
