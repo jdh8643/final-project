@@ -1,32 +1,116 @@
-import { useState } from "react";
+import { useEffect, useState } from "react"
 import { useAuthStore } from "../stores/useAuthStore";
+import supabase from "../utils/supabase";
 
+export default function MyPage() {
+	const { user } = useAuthStore();
+	const [previewImage, setPreviewImage] = useState<string | null>(null);
+	const [profileFile, setProfileFile] = useState<File | null>(null)
+	const [nickname, setNickname] = useState("");
+	const [isUploading, setIsUploading] = useState(false);
 
-const MyPage = () => {
+	const handleNicknameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setNickname(e.target.value);
+	}
 
-  const {user} = useAuthStore();
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
+	useEffect(() => {
+		if (user) {
+			setNickname(user.nickname);
+			setPreviewImage(user.img_url)
+		}
+	}, [user]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if(file){
-      const reader = new FileReader();
-      reader.onload = (e) => {
-      setPreviewImage(e.target?.result as string);
-    }
-    reader.readAsDataURL(file);
-  }
-  }
-  return (
-    <div className="max-w-2xl mx-auto p-6">
+	const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+
+		if (file) {
+			const reader = new FileReader();
+			reader.onload = (e) => {
+				setPreviewImage(e.target?.result as string);
+			}
+			reader.readAsDataURL(file);
+			setProfileFile(file);
+		}
+	}
+
+	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		if (!user) return;
+
+		try {
+			setIsUploading(true);
+			const updateData = {
+				nickname,
+				img_url: previewImage,
+			}
+
+			if (profileFile) {
+				const fileExt = profileFile.name.split(".").pop();
+				const filePath = `${user.id}/${Date.now()}.${fileExt}`
+				
+				// 1. Storage에 이미지 업로드
+				const { error: uploadError } = await supabase.storage
+					.from("profile_images")
+					.upload(filePath, profileFile, {
+						cacheControl: "3600",
+						upsert: false
+					});
+
+				if (uploadError) {
+					throw new Error(`이미지 업로드 실패: ${uploadError.message}`);
+				}
+
+				// 2. 공개 URL 가져오기
+				const { data: { publicUrl } } = supabase.storage
+					.from("profile_images")
+					.getPublicUrl(filePath);
+
+				updateData.img_url = publicUrl;
+			}
+
+			// 3. Auth 메타데이터 업데이트
+			const { error: userError } = await supabase.auth.updateUser({
+				data: updateData
+			});
+
+			if (userError) {
+				throw new Error(`사용자 정보 업데이트 실패: ${userError.message}`);
+			}
+
+			// 4. users 테이블 업데이트 - 여기를 수정
+			const { error: dbError } = await supabase
+				.from("users")
+				.update({
+					nickname: updateData.nickname,
+					img_url: updateData.img_url,
+					updated_at: new Date().toISOString()
+				})
+				.eq("id", user.id);
+
+			if (dbError) {
+				throw new Error(`데이터베이스 업데이트 실패: ${dbError.message}`);
+			}
+
+			alert("프로필이 성공적으로 업데이트되었습니다.");
+
+		} catch (error) {
+			if (error instanceof Error) {
+				alert(error.message);
+			}
+		} finally {
+			setIsUploading(false);
+		}
+	}
+
+	return (
+		<div className="max-w-2xl mx-auto p-6">
 			<h1 className="text-2xl font-bold mb-8">마이페이지</h1>
 
 			<div className="space-y-6">
-				{/* 프로필 이미지 섹션 */}
 				<div className="flex items-center space-x-4">
 					<div className="relative">
 						<img
-							src={previewImage || "/image.png"}
+							src={previewImage || "/default-profile.jpg"}
 							alt="프로필 이미지"
 							className="w-24 h-24 rounded-full object-cover"
 						/>
@@ -49,8 +133,7 @@ const MyPage = () => {
 					</div>
 				</div>
 
-				{/* 사용자 정보 폼 */}
-				<form className="space-y-4">
+				<form onSubmit={handleSubmit} className="space-y-4">
 					<div>
 						<label htmlFor="email" className="block text-sm font-medium text-gray-700">
 							이메일
@@ -71,8 +154,8 @@ const MyPage = () => {
 						<input
 							type="text"
 							id="nickname"
-							value={user?.nickname}
-							// onChange={handleChange}
+							value={nickname}
+							onChange={handleNicknameChange}
 							placeholder="닉네임을 입력하세요"
 							className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"
 						/>
@@ -81,18 +164,16 @@ const MyPage = () => {
 					<div className="flex justify-end">
 						<button
 							type="submit"
-							// disabled={isUploading}
+							disabled={isUploading}
 							className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500
+								${isUploading ? "opacity-50 cursor-not-allowed" : ""}
 								`}
 						>
-							{/* {isUploading ? "업로드 중..." : "저장하기"} */}
-							저장하기
+							{isUploading ? "업로드 중..." : "저장하기"}
 						</button>
 					</div>
 				</form>
 			</div>
 		</div>
-  )
+	)
 }
-
-export default MyPage
